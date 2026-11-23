@@ -1,0 +1,67 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+*.pcm
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+sim_test
+
+# CMake and build directories
+build/
+*/build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+compile_commands.json
+.ninja_deps
+.ninja_log
+
+# Clangd and LSP caches
+.cache/
+.clangd/index/
+
+# Node / Frontend
+node_modules/
+*/node_modules/
+dist/
+*/dist/
+dist-ssr/
+*/dist-ssr/
+*.local
+.vite/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS and Editors
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
