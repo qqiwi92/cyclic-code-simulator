@@ -15,4 +15,5 @@ target_sources(sim_test
             contract.cppm
     PRIVATE
         main.cpp
+        implementation.cpp
 )
