@@ -1,5 +1,3 @@
-import initSimModule, { type WasmModule } from '@/wasm/sim';
-
 export interface SimulationParams {
   blockSize: number;
   polyInput: string;
@@ -134,15 +132,6 @@ function formatFormula(powers: number[]): string {
     .join(' + ');
 }
 
-let wasmModulePromise: Promise<WasmModule> | null = null;
-
-export async function getWasmSimulator(): Promise<WasmModule> {
-  if (!wasmModulePromise) {
-    wasmModulePromise = initSimModule();
-  }
-  return wasmModulePromise;
-}
-
 export async function runSimulation(
   params: SimulationParams,
   onProgress?: (progress: {
@@ -179,7 +168,13 @@ export async function runSimulation(
     throw new Error('Образующий полином должен содержать свободный член 1 (x⁰)');
   }
 
-  const mod = await getWasmSimulator();
+  // Launch in dedicated Web Worker thread
+  const worker = new Worker(
+    new URL('../workers/simulator.worker.ts', import.meta.url),
+    { type: 'module' }
+  );
+
+  const reqId = `sim-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 
   const cfg = {
     n,
@@ -195,54 +190,76 @@ export async function runSimulation(
     block_limit: BigInt(Math.max(0, blockLimit)),
   };
 
-  const sim = new mod.Simulator(cfg);
+  const channelModelDesc =
+    modelType === 0
+      ? `Независимые (p=${bitErrorProb})`
+      : `Гильберт (P_gb=${gilbertGood2Bad}, P_bg=${gilbertBad2Good})`;
 
-  try {
-    const batchSize = 25000n;
-    while (!sim.is_finished() && !signal?.aborted) {
-      const stepRes = sim.step(batchSize);
-      onProgress?.({
-        currentBlocks: Number(stepRes.total_blocks),
-        detectedErrors: Number(stepRes.detected_errors),
-        undetectedErrors: Number(stepRes.undetected_errors),
-      });
+  return new Promise((resolve, reject) => {
+    let resolved = false;
 
-      // Yield to JS event loop so UI can repaint and handle user abort
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    }
-
-    const finalRes = sim.get_result();
-    const totalBlocks = Number(finalRes.total_blocks);
-    const detectedErrors = Number(finalRes.detected_errors);
-    const undetectedErrors = Number(finalRes.undetected_errors);
-    const correctBlocks = Math.max(0, totalBlocks - detectedErrors - undetectedErrors);
-
-    let stoppedReason: 'limit_blocks' | 'limit_errors' | 'manual' = finalRes.stopped_by_limit
-      ? 'limit_blocks'
-      : 'limit_errors';
-    if (signal?.aborted) {
-      stoppedReason = 'manual';
-    }
-
-    const channelModelDesc =
-      modelType === 0
-        ? `Независимые (p=${bitErrorProb})`
-        : `Гильберт (P_gb=${gilbertGood2Bad}, P_bg=${gilbertBad2Good})`;
-
-    return {
-      blockSize: n,
-      infoSize: k,
-      channelModel: channelModelDesc,
-      polyString: parsedPoly.formatted,
-      correctBlocks,
-      detectedErrors,
-      undetectedErrors,
-      totalBlocks,
-      stoppedReason,
+    const cleanup = () => {
+      if (!resolved) {
+        resolved = true;
+        try {
+          worker.terminate();
+        } catch {}
+      }
     };
-  } finally {
-    sim.delete();
-  }
+
+    if (signal) {
+      if (signal.aborted) {
+        cleanup();
+        reject(new Error('Отменено пользователем'));
+        return;
+      }
+      signal.addEventListener('abort', () => {
+        try {
+          worker.postMessage({ type: 'cancel', id: reqId });
+        } catch {}
+        setTimeout(cleanup, 60);
+      });
+    }
+
+    worker.onmessage = (e: MessageEvent) => {
+      const msg = e.data;
+      if (!msg || msg.id !== reqId) return;
+
+      if (msg.type === 'progress') {
+        onProgress?.(msg.data);
+      } else if (msg.type === 'done') {
+        const { totalBlocks, detectedErrors, undetectedErrors, stoppedReason } = msg.data;
+        cleanup();
+        const correctBlocks = Math.max(0, totalBlocks - detectedErrors - undetectedErrors);
+        resolve({
+          blockSize: n,
+          infoSize: k,
+          channelModel: channelModelDesc,
+          polyString: parsedPoly.formatted,
+          correctBlocks,
+          detectedErrors,
+          undetectedErrors,
+          totalBlocks,
+          stoppedReason,
+        });
+      } else if (msg.type === 'error') {
+        cleanup();
+        reject(new Error(msg.message || 'Ошибка симуляции в потоке'));
+      }
+    };
+
+    worker.onerror = (err) => {
+      cleanup();
+      reject(err);
+    };
+
+    worker.postMessage({
+      type: 'start',
+      id: reqId,
+      config: cfg,
+      batchSize: 50000,
+    });
+  });
 }
 
 export function exportToCsv(rows: SimulationResultRow[]): void {
