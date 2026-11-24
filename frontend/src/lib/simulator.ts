@@ -3,7 +3,7 @@ export interface SimulationParams {
   polyInput: string;
   blockLimit: number;
   errorLimit: number;
-  modelType: number; // 0 = independent, 1 = Gilbert
+  modelType: number;
   bitErrorProb?: number;
   gilbertGood2Bad?: number;
   gilbertBad2Good?: number;
@@ -39,7 +39,6 @@ export interface ParsedPoly {
 export function parsePolynomial(input: string): ParsedPoly {
   const trimmed = input.trim();
 
-  // Binary representation: e.g. "101001"
   if (/^[01]+$/.test(trimmed)) {
     const powers: number[] = [];
     const len = trimmed.length;
@@ -66,7 +65,6 @@ export function parsePolynomial(input: string): ParsedPoly {
     };
   }
 
-  // Degree list representation: e.g. "[5; 3; 0]" or "5 3 0" or "x^5 + x^3 + 1"
   const cleaned = trimmed.replace(/^\[/, '').replace(/\]$/, '');
   const tokens = cleaned.split(/[\s;,+]+/).filter(Boolean);
   const powers = tokens
@@ -79,7 +77,6 @@ export function parsePolynomial(input: string): ParsedPoly {
     .filter((n) => !isNaN(n) && n >= 0)
     .sort((a, b) => b - a);
 
-  // Eliminate duplicates
   const uniquePowers = Array.from(new Set(powers)).sort((a, b) => b - a);
 
   if (uniquePowers.length === 0) {
@@ -168,7 +165,6 @@ export async function runSimulation(
     throw new Error('Образующий полином должен содержать свободный член 1 (x⁰)');
   }
 
-  // Launch in dedicated Web Worker thread
   const worker = new Worker(
     new URL('../workers/simulator.worker.ts', import.meta.url),
     { type: 'module' }

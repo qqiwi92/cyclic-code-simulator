@@ -104,7 +104,6 @@ Result Simulator::step(uint64_t batch_size)
 
   while ((cfg.block_limit == 0 || result.total_blocks < cfg.block_limit) &&
          (batch_size == 0 || processed < batch_size)) {
-    // 1. Generate k random information bits
     for (int i = 0; i < cfg.k; ++i) {
       bool b = bit_dist(gen) != 0;
       block[i] = b;
@@ -114,14 +113,12 @@ Result Simulator::step(uint64_t batch_size)
       block[i] = false;
     }
 
-    // 2. Encode: calculate remainder on block and place in check bits [k .. n-1]
     uint64_t check_bits = compute_remainder(block);
     for (int i = cfg.n - 1; i >= cfg.k; --i) {
       block[i] = (check_bits & 1ULL) != 0;
       check_bits >>= 1;
     }
 
-    // 3. Transmit through channel
     if (cfg.model_type == 0) {
       for (int i = 0; i < cfg.n; ++i) {
         if (real_dist(gen) < cfg.independant_prob) {
@@ -143,7 +140,6 @@ Result Simulator::step(uint64_t batch_size)
       }
     }
 
-    // 4. Receiver: syndrome check
     const bool detected_error = compute_remainder(block) != 0;
     ++result.total_blocks;
     ++processed;
@@ -163,7 +159,6 @@ Result Simulator::step(uint64_t batch_size)
       }
     }
 
-    // Check target errors limit (stopping on undetected errors)
     if (cfg.target_errors != 0 && result.undetected_errors >= cfg.target_errors) {
       finished = true;
       result.stopped_by_limit = false;
@@ -188,4 +183,4 @@ Result run(const Config& cfg)
   return sim.get_result();
 }
 
-} // namespace FrontendPipe
+}

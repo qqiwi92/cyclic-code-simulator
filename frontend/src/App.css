@@ -99,7 +99,6 @@
     color-scheme: dark;
   }
 
-  /* Custom dark scrollbar for WebKit browsers */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;

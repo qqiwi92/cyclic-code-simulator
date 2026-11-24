@@ -82,15 +82,12 @@ const GILBERT_PRESETS = [
 ];
 
 export const CrcLabModForm = () => {
-  // 1. Code parameters
   const [blockSize, setBlockSize] = useState<number>(15);
   const [polyInput, setPolyInput] = useState<string>('[5; 3; 0]');
 
-  // 2. Stop condition parameters
   const [blockLimit, setBlockLimit] = useState<number>(1000000);
   const [errorLimit, setErrorLimit] = useState<number>(100);
 
-  // 3. Channel model parameters
   const [modelType, setModelType] = useState<number>(0);
   const [bitErrorProb, setBitErrorProb] = useState<number>(0.01);
   const [gilbertGood2Bad, setGilbertGood2Bad] = useState<number>(0.001);
@@ -98,7 +95,6 @@ export const CrcLabModForm = () => {
   const [gilbertDuringBad, setGilbertDuringBad] = useState<number>(0.5);
   const [gilbertDuringGood, setGilbertDuringGood] = useState<number>(0.0001);
 
-  // 4. Execution state
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [progressText, setProgressText] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -107,7 +103,6 @@ export const CrcLabModForm = () => {
   const abortControllerRef = useRef<AbortController | null>(null);
   const logContainerRef = useRef<HTMLDivElement | null>(null);
 
-  // 5. Results table state
   const [results, setResults] = useState<SimulationResultRow[]>([
     {
       id: 'initial-1',
@@ -125,7 +120,6 @@ export const CrcLabModForm = () => {
     },
   ]);
 
-  // 6. Live log entries
   const [logs, setLogs] = useState<LogEntry[]>(() => [
     {
       id: 'log-0',
@@ -151,13 +145,11 @@ export const CrcLabModForm = () => {
     }
   }, [logs]);
 
-  // Polynomial parsing and validation
   const parsed = parsePolynomial(polyInput);
   const k = blockSize - parsed.degree;
   const isDegreeValid = parsed.degree > 0 && k > 0;
   const isPolyValid = parsed.isValid && isDegreeValid;
 
-  // Average Gilbert channel stats for display
   const gilbertTotalTrans = gilbertGood2Bad + gilbertBad2Good;
   const gilbertBadStateProb =
     gilbertTotalTrans > 0 ? gilbertGood2Bad / gilbertTotalTrans : 0;
@@ -240,7 +232,7 @@ export const CrcLabModForm = () => {
         timestamp: new Date().toLocaleTimeString(),
       };
 
-      setResults((prev) => [newRow,...prev]);
+      setResults((prev) => [newRow, ...prev]);
 
       const stopLabel =
         res.stoppedReason === 'limit_blocks'
@@ -325,9 +317,7 @@ export const CrcLabModForm = () => {
 
   return (
     <div className="w-full h-full flex flex-col gap-2.5 overflow-hidden">
-      {/* TOP ROW: 3 Grouped Cards across full screen width */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 shrink-0">
-        {/* CARD 1: Code Parameters */}
         <Card className="border border-border/70 shadow-sm bg-card/80 p-3 flex flex-col justify-between">
           <CardHeader className="p-0 pb-2 border-b border-border/40">
             <div className="flex items-center justify-between">
@@ -398,7 +388,6 @@ export const CrcLabModForm = () => {
           </CardContent>
         </Card>
 
-        {/* CARD 2: Channel Model */}
         <Card className="border border-border/70 shadow-sm bg-card/80 p-3 flex flex-col justify-between">
           <CardHeader className="p-0 pb-2 border-b border-border/40">
             <div className="flex items-center justify-between">
@@ -557,7 +546,6 @@ export const CrcLabModForm = () => {
           </CardContent>
         </Card>
 
-        {/* CARD 3: Stop Limits & Controls */}
         <Card className="border border-border/70 shadow-sm bg-card/80 p-3 flex flex-col justify-between">
           <CardHeader className="p-0 pb-2 border-b border-border/40">
             <div className="flex items-center justify-between">
@@ -663,7 +651,6 @@ export const CrcLabModForm = () => {
         </Card>
       </div>
 
-      {/* RUNNING BANNER (when simulation is actively running) */}
       {isRunning && (
         <div className="px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 flex items-center justify-between text-xs font-mono text-primary shrink-0 animate-pulse">
           <div className="flex items-center gap-2">
@@ -674,7 +661,6 @@ export const CrcLabModForm = () => {
         </div>
       )}
 
-      {/* MIDDLE: Results Table across 100% full width (flex-1, no page scroll) */}
       <div className="flex-1 min-h-0 flex flex-col rounded-lg border border-border bg-card overflow-hidden shadow-sm">
         <div className="px-3 py-2 bg-muted/40 border-b border-border flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
@@ -794,7 +780,6 @@ export const CrcLabModForm = () => {
         </div>
       </div>
 
-      {/* BOTTOM: Event Log Terminal across full width (compact, internal scroll only) */}
       <div className="h-32 sm:h-36 shrink-0 flex flex-col rounded-lg border border-border bg-black/95 overflow-hidden shadow-inner">
         <div className="px-3 py-1.5 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">

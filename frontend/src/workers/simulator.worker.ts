@@ -46,7 +46,6 @@ self.onmessage = async (e: MessageEvent) => {
           },
         });
 
-        // Yield to allow processing cancellation message if sent
         await new Promise((r) => setTimeout(r, 0));
       }
 

@@ -5,19 +5,19 @@
 namespace FrontendPipe {
 
 struct Config {
-  int n;         // длина блока
-  int k;         // кол-во инф бит
-  uint64_t poly; // полином
+  int n;
+  int k;
+  uint64_t poly;
 
-  int model_type;                  // 0 = незав. ошибок, 1 = Гильберт-Эллиотт
-  double independant_prob;         // ошибка в режиме независимых ошибок
-  double gilbert_good2bad_prob;    // вероятность смены хорошего состояния в плохое
-  double gilbert_bad2good_prob;    // вероятность смены плохого состояния в хорошее
-  double gilbert_during_bad_prob;  // вероятность ошибки во время плохого
-  double gilbert_during_good_prob; // вероятность ошибки во время хорошего
+  int model_type;
+  double independant_prob;
+  double gilbert_good2bad_prob;
+  double gilbert_bad2good_prob;
+  double gilbert_during_bad_prob;
+  double gilbert_during_good_prob;
 
-  uint64_t target_errors; // останавливаемся на этом кол-ве необнаруженных ошибок (0 = без лимита ошибок)
-  uint64_t block_limit;   // останавливаемся на этом кол-ве блоков
+  uint64_t target_errors;
+  uint64_t block_limit;
 };
 
 struct Result {
@@ -50,4 +50,4 @@ public:
 
 Result run(const Config& cfg);
 
-} // namespace FrontendPipe
+}
